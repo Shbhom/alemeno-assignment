@@ -2,6 +2,7 @@ import express, { NextFunction, Response } from "express"
 import cookieparser from "cookie-parser"
 import "dotenv/config"
 import { ErrorHandlingMiddleware } from "./utils/errors"
+import userRouter from "./routes/user.routes"
 
 const port = process.env.PORT
 const app = express()
@@ -12,6 +13,7 @@ app.use(express.urlencoded({ extended: false }))
 
 app.get("/healthCheck", (_, res: Response, next: NextFunction) => {
     try {
+        console.log("hello")
         return res.status(200).json({
             message: "working Fine"
         })
@@ -20,6 +22,8 @@ app.get("/healthCheck", (_, res: Response, next: NextFunction) => {
 
     }
 })
+
+app.use("/api/user", userRouter)
 
 app.use(ErrorHandlingMiddleware)
 

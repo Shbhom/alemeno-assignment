@@ -1,0 +1,1 @@
+ALTER TABLE "customer" ADD COLUMN "age" numeric(3, 0) NOT NULL;
