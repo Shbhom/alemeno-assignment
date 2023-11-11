@@ -1,0 +1,4 @@
+.env-db
+.env-backend
+app/node_modules
+app/dist

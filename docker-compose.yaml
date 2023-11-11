@@ -1,0 +1,48 @@
+version: '3'
+
+services:
+  backend:
+    image: app-img:1.0
+
+    ports:
+      - 5500:5500
+
+    volumes:
+      - ./app:/app
+
+    networks:
+      - alemeno-network
+
+    env_file:
+      - ./.env-backend
+
+    container_name: alemeno-backend
+
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:latest
+
+    ports:
+      - 5432:5432
+
+    container_name: alemeno-db
+
+    networks:
+      - alemeno-network
+
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+    env_file:
+      - ./.env-db
+
+networks:
+  alemeno-network:
+
+
+volumes:
+  pgdata:
+
+
