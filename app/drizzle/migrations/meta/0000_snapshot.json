@@ -1,0 +1,154 @@
+{
+  "id": "86797eb7-ca05-4d71-88c0-56a507c0ebd6",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "5",
+  "dialect": "pg",
+  "tables": {
+    "loans": {
+      "name": "loans",
+      "schema": "",
+      "columns": {
+        "loan_id": {
+          "name": "loan_id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "loan_amount": {
+          "name": "loan_amount",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tenure": {
+          "name": "tenure",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "interest_rate": {
+          "name": "interest_rate",
+          "type": "numeric(3, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "monthly_payments": {
+          "name": "monthly_payments",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "paid_on_time": {
+          "name": "paid_on_time",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "bearer_Id": {
+          "name": "bearer_Id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "start_date": {
+          "name": "start_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "end_date": {
+          "name": "end_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "loans_bearer_Id_customer_customer_id_fk": {
+          "name": "loans_bearer_Id_customer_customer_id_fk",
+          "tableFrom": "loans",
+          "tableTo": "customer",
+          "columnsFrom": [
+            "bearer_Id"
+          ],
+          "columnsTo": [
+            "customer_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "customer": {
+      "name": "customer",
+      "schema": "",
+      "columns": {
+        "customer_id": {
+          "name": "customer_id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "first_name": {
+          "name": "first_name",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_name": {
+          "name": "last_name",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "phone_no": {
+          "name": "phone_no",
+          "type": "numeric(10, 0)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "monthly_salary": {
+          "name": "monthly_salary",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "approved_limit": {
+          "name": "approved_limit",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "current_debts": {
+          "name": "current_debts",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "customer_phone_no_unique": {
+          "name": "customer_phone_no_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "phone_no"
+          ]
+        }
+      }
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  }
+}
