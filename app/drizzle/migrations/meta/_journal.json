@@ -15,6 +15,20 @@
       "when": 1699698088885,
       "tag": "0001_talented_iron_man",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1699780469432,
+      "tag": "0002_robust_prodigy",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1699780507798,
+      "tag": "0003_slippery_smasher",
+      "breakpoints": true
     }
   ]
 }

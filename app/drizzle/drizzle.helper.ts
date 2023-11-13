@@ -1,16 +1,29 @@
-import { migrate } from "drizzle-orm/postgres-js/migrator"
-import { drizzle } from "drizzle-orm/postgres-js"
-import postgres from "postgres"
+import { migrate } from "drizzle-orm/node-postgres/migrator"
+import { drizzle } from "drizzle-orm/node-postgres"
+import { Pool, QueryResult, QueryResultRow } from "pg"
 import "dotenv/config"
 import * as schema from "./schema"
+import { text } from "drizzle-orm/mysql-core"
 
 
 const connectionString = process.env.DB_URL as string
 
-const sql = postgres(connectionString, { max: 1 })
-const db = drizzle(sql, { schema })
+const pool = new Pool({
+    connectionString: connectionString
+})
+const db = drizzle(pool, { schema })
 
 
 async function runMigrations() {
     await migrate(db, { migrationsFolder: "./drizzle/schema.ts" })
+}
+
+const query = async<T extends QueryResultRow>(text: string, params: any[] = []): Promise<QueryResult<T>> => {
+    const result = await pool.query<T>(text, params)
+    return result
+}
+
+export default {
+    query,
+    pool
 }
