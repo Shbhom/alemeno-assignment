@@ -18,6 +18,7 @@ export const loan = pgTable("loans", {
     tenure: decimal("tenure", { precision: 5, scale: 2 }).notNull(),
     interestRate: decimal("interest_rate", { precision: 5, scale: 2 }).notNull(),
     emi: decimal("monthly_payments", { precision: 10, scale: 2 }).notNull(),
+    EMIs_paid: integer("EMIs_paid").default(0),
     EMIs_paid_on_time: integer("EMIs_paid_on_time").default(0),
     bearer_id: integer("bearer_id").notNull().references(() => user.id),
     startDate: date("start_date", { mode: "string" }).notNull(),

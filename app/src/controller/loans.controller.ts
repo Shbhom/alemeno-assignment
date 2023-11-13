@@ -100,45 +100,104 @@ export async function getLoan(req: Request, res: Response, next: NextFunction) {
 
 export async function makePayments(req: Request, res: Response, next: NextFunction) {
     try {
-        const { customerId, loanId } = req.params
-        const { amountTobePaid } = req.body
-        const loanQueryResult = await db.query(`SELECT monthly_payments,tenure,start_date,end_date,"EMIs_paid_on_time" FROM LOANS WHERE loan_id=$1 AND bearer_id=$2`, [Number(loanId), Number(customerId)])
-        const loan = loanQueryResult.rows[0]
-        if (!loan) {
-            throw new CustomErrorHandler(`No loan found for loanId:${loanId} and customerId:${customerId}`)
-        }
-        const EMI = Number(loan.monthly_payments)
-        let date = new Date().toISOString().split('T')[0]
-        let start_date = new Date(loan.start_date)
-        let today = calculateEndDate(date)
-        let end_date = new Date(loan.end_date)
+        const { customerId, loanId } = req.params;
+        const { amountTobePaid } = req.body;
 
-        const isEmiDate = isSameDayOfMonthWithinTenure(today, start_date, end_date, loan.tenure)
-        let updatedLoan, updatedEMI;
-        if (amountTobePaid === EMI) {
-            if (isEmiDate) {
-                const updateLoanQuery = await db.query(`UPDATE loans SET "EMIs_paid_on_time" = "EMIs_paid_on_time" + 1 WHERE loan_id = $1 AND bearer_id = $2 RETURNING * ;`, [loanId, customerId])
-                updatedLoan = updateLoanQuery.rows[0]
+        // Fetch loan details from the database
+        const loanQueryResult = await db.query(
+            `SELECT loan_id, bearer_id, monthly_payments, tenure, start_date, end_date, "EMIs_paid", "EMIs_paid_on_time"
+             FROM LOANS 
+             WHERE loan_id = $1 AND bearer_id = $2`,
+            [Number(loanId), Number(customerId)]
+        );
+
+        const loan = loanQueryResult.rows[0];
+
+        if (!loan) {
+            throw new CustomErrorHandler(`No loan found for loanId:${loanId} and customerId:${customerId}`);
+        }
+
+        const { monthly_payments, tenure, start_date, end_date, EMIs_paid, EMIs_paid_on_time } = loan;
+
+        if (tenure > EMIs_paid) {
+            let date = new Date().toISOString().split('T')[0];
+            let today = calculateEndDate(date);
+
+            const isEmiDate = isSameDayOfMonthWithinTenure(today, new Date(start_date), new Date(end_date), tenure);
+
+            if (amountTobePaid === monthly_payments) {
+                const updateLoanQuery = await db.query(
+                    `UPDATE LOANS 
+                     SET "EMIs_paid" = "EMIs_paid" + 1,
+                         "EMIs_paid_on_time" = CASE WHEN $1 THEN "EMIs_paid_on_time" + 1 ELSE "EMIs_paid_on_time" END
+                     WHERE loan_id = $2 AND bearer_id = $3
+                     RETURNING *;`,
+                    [isEmiDate, loanId, customerId]
+                );
+                const updatedLoan = updateLoanQuery.rows[0];
+
+                return res.status(200).json({
+                    customerId,
+                    loan: updatedLoan
+                });
+            } else {
+                const updatedEMI = updateEMI(amountTobePaid, monthly_payments, tenure);
+
+                const updateLoanQuery = await db.query(
+                    `UPDATE LOANS 
+                     SET "EMIs_paid" = "EMIs_paid" + 1,
+                         "EMIs_paid_on_time" = CASE WHEN $1 THEN "EMIs_paid_on_time" + 1 ELSE "EMIs_paid_on_time" END,
+                         monthly_payments = $2
+                     WHERE loan_id = $3 AND bearer_id = $4
+                     RETURNING *;`,
+                    [isEmiDate, updatedEMI, loanId, customerId]
+                );
+
+                const updatedLoan = updateLoanQuery.rows[0];
+
+                return res.status(200).json({
+                    customerId,
+                    loan: updatedLoan
+                });
             }
-            return res.status(200).json({
-                customer_Id: customerId,
-                loan
-            })
         } else {
-            let updatedEMI = updateEMI(amountTobePaid, EMI, Number(loan.tenure))
-            const updateLoanQuery = isEmiDate ? await db.query(`UPDATE loans SET "EMIs_paid_on_time" = "EMIs_paid_on_time" + 1,monthly_payments = $1 WHERE loan_id = $2 AND bearer_id = $3 RETURNING * ;`, [updatedEMI, loanId, customerId]) : await db.query(`UPDATE loans SET monthly_payments = $1 WHERE loan_id = $2 AND bearer_id = $3 RETURNING * ;`, [updatedEMI, loanId, customerId])
-            updatedLoan = updateLoanQuery.rows[0]
-            return res.status(200).json({
-                customerId,
-                loan: updatedLoan
-            })
+            return res.status(400).json({
+                error: "No EMIs left for the loan"
+            });
         }
     } catch (err: any) {
-        return next(err)
+        return next(err);
     }
 }
 
 
+
+
+export async function getStatement(req: Request, res: Response, next: NextFunction) {
+    try {
+        const { customerId, loanId } = req.params;
+        const loanQuery = await db.query("SELECT * FROM LOANS WHERE loan_id=$1 AND bearer_id=$2;", [loanId, customerId]);
+        const loan = loanQuery.rows[0];
+
+        const repayments_left = loan.tenure - loan.EMIs_paid
+        const amount_paid = loan.loan_amount - (repayments_left * loan.tenure)
+
+        const serializeResponse = {
+            customer_id: Number(customerId),
+            loan_id: Number(loanId),
+            principal: Number(loan.loan_amount),
+            interest_rate: Number(loan.interest_rate),
+            amount_paid: Number(amount_paid),
+            monthly_installments: Number(loan.monthly_payments),
+            repayments_left: Number(repayments_left),
+        }
+        res.status(200).json({
+            serializeResponse
+        });
+    } catch (err: any) {
+        return next(err);
+    }
+}
 
 
 
