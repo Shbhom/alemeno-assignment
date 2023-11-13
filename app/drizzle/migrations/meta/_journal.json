@@ -29,6 +29,27 @@
       "when": 1699780507798,
       "tag": "0003_slippery_smasher",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1699898568948,
+      "tag": "0004_fantastic_sugar_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1699898644107,
+      "tag": "0005_happy_bruce_banner",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1699898672689,
+      "tag": "0006_premium_the_watchers",
+      "breakpoints": true
     }
   ]
 }

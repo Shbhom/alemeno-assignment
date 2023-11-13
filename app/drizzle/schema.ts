@@ -15,11 +15,11 @@ export const user = pgTable("customer", {
 export const loan = pgTable("loans", {
     id: serial("loan_id").primaryKey(),
     loanAmount: numeric("loan_amount", { precision: 10, scale: 2 }).notNull(),
-    tenure: date("tenure", { mode: "string" }).notNull(),
-    interestRate: numeric("interest_rate", { precision: 3, scale: 2 }).notNull(),
+    tenure: numeric("tenure", { precision: 5, scale: 2 }).notNull(),
+    interestRate: numeric("interest_rate", { precision: 5, scale: 2 }).notNull(),
     emi: numeric("monthly_payments", { precision: 10, scale: 2 }).notNull(),
     emiPayedOnTime: boolean("paid_on_time").default(false),
-    bearerId: integer("bearer_Id").notNull().references(() => user.id),
+    bearer_id: integer("bearer_id").notNull().references(() => user.id),
     startDate: date("start_date", { mode: "string" }).notNull(),
     endDate: date("end_date", { mode: "string" }).notNull(),
 })
@@ -31,7 +31,7 @@ export const userRelations = relations(user, ({ many }) => ({
 
 export const loanRelations = relations(loan, ({ one }) => ({
     bearer: one(user, {
-        fields: [loan.bearerId],
+        fields: [loan.bearer_id],
         references: [user.id]
     })
 }))

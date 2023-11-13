@@ -3,6 +3,7 @@ import cookieparser from "cookie-parser"
 import "dotenv/config"
 import { ErrorHandlingMiddleware } from "./utils/errors"
 import userRouter from "./routes/user.routes"
+import loanRouter from "./routes/loan.routes"
 
 const port = process.env.PORT
 const app = express()
@@ -24,6 +25,7 @@ app.get("/healthCheck", (_, res: Response, next: NextFunction) => {
 })
 
 app.use("/api/user", userRouter)
+app.use("/api/loan", loanRouter)
 
 app.use(ErrorHandlingMiddleware)
 

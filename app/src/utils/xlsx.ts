@@ -99,7 +99,6 @@ export function calculateCreditScore(customerId: number, userLoanData: RowData[]
 }
 
 
-// Function to determine loan approval and interest rate based on credit score
 export function determineLoanApproval(
     creditScore: number,
     userLoanData: RowData[],
@@ -121,3 +120,32 @@ export function determineLoanApproval(
     }
     return result
 }
+
+export function calculateEMI(loanAmount: number, annualInterestRate: number, tenureInMonths: number) {
+    const monthlyInterestRate = (annualInterestRate / 12) / 100;
+
+    const tenureInDays = tenureInMonths * 30;
+
+    const emi = loanAmount * monthlyInterestRate * Math.pow((1 + monthlyInterestRate), tenureInDays) /
+        (Math.pow((1 + monthlyInterestRate), tenureInDays) - 1);
+
+    return emi.toFixed(2);
+}
+
+export function calculateEndDate(startDate: string, tenureInMonths: number) {
+    try {
+        const [year, month, date] = startDate.split('-').map(Number);
+
+        const newMonth = (month + tenureInMonths) % 12;
+        const newYear = year + Math.floor((month + tenureInMonths) / 12);
+
+        const formattedMonth = String(newMonth).padStart(2, '0');
+
+        const endDate = `${newYear}-${formattedMonth}-${date}`;
+
+        return endDate;
+    } catch (err: any) {
+        throw new CustomErrorHandler("Cannot calculate end date for the loan");
+    }
+}
+
