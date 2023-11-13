@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { CustomErrorHandler } from "../utils/errors";
+import { CustomErrorHandler, statusCodes } from "../utils/errors";
 import "dotenv/config"
 import db from "../../drizzle/drizzle.helper"
 import * as excel from "exceljs"
@@ -14,7 +14,7 @@ export async function registerHandler(req: Request, res: Response, next: NextFun
         const { first_name, last_name, phone_number, age, monthly_salary } = req.body
 
         if (!first_name || typeof first_name !== "string" || !last_name || typeof first_name !== "string" || !phone_number || typeof phone_number !== "number" || !age || typeof phone_number !== "number" || !monthly_salary || typeof phone_number !== "number") {
-            throw new CustomErrorHandler("invalid input or input types", 400)
+            throw new CustomErrorHandler("invalid input or input types", statusCodes.BAD_REQUEST)
         }
 
 
@@ -49,7 +49,7 @@ export async function checkEligibility(req: Request, res: Response, next: NextFu
         const result = await db.query("SELECT * FROM CUSTOMER WHERE customer_id = $1", [customer_id])
         const user: serializedUser | QueryResultRow = result.rows[0]
         if (!user) {
-            throw new CustomErrorHandler("No user found with customer Id", 404)
+            throw new CustomErrorHandler("No user found with customer Id", statusCodes.NOT_FOUND)
         }
         const serializedUser: serializedUser = {
             customerId: user.customer_id,
