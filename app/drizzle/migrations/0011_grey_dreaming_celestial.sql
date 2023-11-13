@@ -1,0 +1,1 @@
+ALTER TABLE "customer" ALTER COLUMN "phone_no" SET DATA TYPE numeric(10, 0);

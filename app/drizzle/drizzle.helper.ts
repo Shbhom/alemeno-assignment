@@ -3,7 +3,6 @@ import { drizzle } from "drizzle-orm/node-postgres"
 import { Pool, QueryResult, QueryResultRow } from "pg"
 import "dotenv/config"
 import * as schema from "./schema"
-import { text } from "drizzle-orm/mysql-core"
 
 
 const connectionString = process.env.DB_URL as string

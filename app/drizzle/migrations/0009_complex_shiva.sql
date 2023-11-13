@@ -1,0 +1,1 @@
+ALTER TABLE "loans" ADD COLUMN "EMIs_paid_on_time" numeric;

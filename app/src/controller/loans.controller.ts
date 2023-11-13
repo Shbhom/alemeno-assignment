@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { CustomErrorHandler, statusCodes } from "../utils/errors";
 import db from "../../drizzle/drizzle.helper"
 import * as path from "path"
-import { calculateCreditScore, readExcel, serializedUser, determineLoanApproval, calculateEMI, calculateEndDate } from "../utils/xlsx";
+import { calculateCreditScore, readExcel, serializedUser, determineLoanApproval, calculateEMI, calculateEndDate, isSameDayOfMonthWithinTenure, updateEMI } from "../utils/xlsx";
 import { QueryResultRow } from "pg";
 
 export async function createLoan(req: Request, res: Response, next: NextFunction) {
@@ -71,3 +71,76 @@ export async function checkEligibility(req: Request, res: Response, next: NextFu
     }
 
 }
+export async function getLoan(req: Request, res: Response, next: NextFunction) {
+    try {
+        let { loanId } = req.params
+
+        const loanQueryResult = await db.query(`SELECT loan_id,bearer_id,loan_amount,interest_rate,monthly_payments,tenure FROM LOANS WHERE loan_id=$1`, [Number(loanId)])
+        const loan = loanQueryResult.rows[0]
+        const userQueryResult = await db.query(`SELECT customer_id,first_name,last_name,monthly_salary,age,phone_no FROM CUSTOMER WHERE customer_id=$1`, [loan.bearer_id])
+        const user = userQueryResult.rows[0]
+        if (!loan) {
+            throw new CustomErrorHandler(`No loan found with loanId:${loanId}`)
+        }
+        const serializeResponse = {
+            loan_Id: Number(loan.loan_id),
+            customer: user,
+            loan_amount: Number(loan.loan_amount),
+            interest_rate: Number(loan.interest_rate),
+            monthly_installments: Number(loan.monthly_payments),
+            tenure: Number(loan.tenure)
+        }
+        res.status(200).json({
+            serializeResponse
+        })
+    } catch (err: any) {
+        return next(err)
+    }
+}
+
+export async function makePayments(req: Request, res: Response, next: NextFunction) {
+    try {
+        const { customerId, loanId } = req.params
+        const { amountTobePaid } = req.body
+        const loanQueryResult = await db.query(`SELECT monthly_payments,tenure,start_date,end_date,"EMIs_paid_on_time" FROM LOANS WHERE loan_id=$1 AND bearer_id=$2`, [Number(loanId), Number(customerId)])
+        const loan = loanQueryResult.rows[0]
+        if (!loan) {
+            throw new CustomErrorHandler(`No loan found for loanId:${loanId} and customerId:${customerId}`)
+        }
+        const EMI = Number(loan.monthly_payments)
+        let date = new Date().toISOString().split('T')[0]
+        let start_date = new Date(loan.start_date)
+        let today = calculateEndDate(date)
+        let end_date = new Date(loan.end_date)
+
+        const isEmiDate = isSameDayOfMonthWithinTenure(today, start_date, end_date, loan.tenure)
+        let updatedLoan, updatedEMI;
+        if (amountTobePaid === EMI) {
+            if (isEmiDate) {
+                const updateLoanQuery = await db.query(`UPDATE loans SET "EMIs_paid_on_time" = "EMIs_paid_on_time" + 1 WHERE loan_id = $1 AND bearer_id = $2 RETURNING * ;`, [loanId, customerId])
+                updatedLoan = updateLoanQuery.rows[0]
+            }
+            return res.status(200).json({
+                customer_Id: customerId,
+                loan
+            })
+        } else {
+            let updatedEMI = updateEMI(amountTobePaid, EMI, Number(loan.tenure))
+            const updateLoanQuery = isEmiDate ? await db.query(`UPDATE loans SET "EMIs_paid_on_time" = "EMIs_paid_on_time" + 1,monthly_payments = $1 WHERE loan_id = $2 AND bearer_id = $3 RETURNING * ;`, [updatedEMI, loanId, customerId]) : await db.query(`UPDATE loans SET monthly_payments = $1 WHERE loan_id = $2 AND bearer_id = $3 RETURNING * ;`, [updatedEMI, loanId, customerId])
+            updatedLoan = updateLoanQuery.rows[0]
+            return res.status(200).json({
+                customerId,
+                loan: updatedLoan
+            })
+        }
+    } catch (err: any) {
+        return next(err)
+    }
+}
+
+
+
+
+
+
+

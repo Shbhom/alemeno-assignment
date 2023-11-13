@@ -132,12 +132,16 @@ export function calculateEMI(loanAmount: number, annualInterestRate: number, ten
     return emi.toFixed(2);
 }
 
-export function calculateEndDate(startDate: string, tenureInMonths: number) {
+export function calculateEndDate(startDate: string, tenureInMonths?: number) {
     try {
         const [year, month, date] = startDate.split('-').map(Number);
-
-        const newMonth = (month + tenureInMonths) % 12;
-        const newYear = year + Math.floor((month + tenureInMonths) / 12);
+        let newMonth, newYear
+        if (tenureInMonths) {
+            newMonth = (month + tenureInMonths) % 12;
+            newYear = year + Math.floor((month + tenureInMonths) / 12);
+        }
+        newMonth = month
+        newYear = year
 
         const formattedMonth = String(newMonth).padStart(2, '0');
 
@@ -149,3 +153,29 @@ export function calculateEndDate(startDate: string, tenureInMonths: number) {
     }
 }
 
+export function isSameDayOfMonthWithinTenure(dateToCheck: string, start_date: Date, end_date: Date, tenure: number) {
+    const today = new Date(dateToCheck)
+
+    // Check if the provided date is within the tenure and is the same day of the month
+    return (
+        today >= start_date &&
+        today <= end_date &&
+        today.getDate() === start_date.getDate()
+    );
+}
+
+export function updateEMI(amountPaid: number, currentEMI: number, tenure: number): number {
+    let updatedEMI = currentEMI;
+    let diff, amtToBechanged = 0;
+    if (currentEMI > amountPaid) {
+        diff = currentEMI - amountPaid
+        amtToBechanged = diff / tenure
+        updatedEMI += amtToBechanged
+    } else {
+        diff = amountPaid - currentEMI
+        amtToBechanged = diff / tenure
+        updatedEMI -= amtToBechanged
+    }
+
+    return updatedEMI
+}
