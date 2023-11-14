@@ -37,8 +37,8 @@ app.post("/trigger-data-ingest", async (_: Request, res: Response, next: NextFun
     }
 })
 
-app.use("/api/user", userRouter)
-app.use("/api/loan", loanRouter)
+app.use("/", userRouter)
+app.use("/", loanRouter)
 
 app.use(ErrorHandlingMiddleware)
 
