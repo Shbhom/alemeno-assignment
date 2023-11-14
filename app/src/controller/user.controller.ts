@@ -19,16 +19,14 @@ export async function registerHandler(req: Request, res: Response, next: NextFun
 
         const result = await db.query("INSERT INTO CUSTOMER (first_name,last_name,phone_no,age,monthly_salary,approved_limit) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *", [first_name, last_name, phone_number, age, monthly_salary, approved_limit])
         const insertedUser = result.rows[0]
-        const serializedUser = {
+
+        return res.status(200).json({
             customerId: insertedUser.customer_id as number,
             name: `${insertedUser.first_name} ${insertedUser.last_name}` as string,
             age: insertedUser.age as number,
             monthly_Income: insertedUser.monthly_salary as number,
             approved_limit: insertedUser.approved_limit as number,
             phone_number: insertedUser.phone_no as number
-        }
-        return res.status(200).json({
-            serializedUser
         })
 
     } catch (err: any) {

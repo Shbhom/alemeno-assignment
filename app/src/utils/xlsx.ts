@@ -1,9 +1,8 @@
 import * as excel from "exceljs"
 import { CustomErrorHandler } from "./errors";
-import { loan } from "../../drizzle/schema";
 
 
-interface RowData {
+export interface RowData {
     customer_id: number;
     loan_id: number;
     loan_amount: number;
@@ -13,6 +12,18 @@ interface RowData {
     EMIs_paid_on_time: number;
     start_date: Date;
     end_date: Date;
+}
+
+
+export interface customerRowData {
+    customer_id: number
+    first_name: string
+    last_name: string
+    phone_number: number
+    monthly_salary: number
+    approved_limit: number
+    current_debt: number
+    age: number
 }
 
 export interface serializedUser {
@@ -28,26 +39,22 @@ export interface serializedUser {
     loan_approved_volume?: number
 }
 
-// Function to read an Excel sheet and return the data
-export async function readExcel(filePath: string, sheetName: string): Promise<RowData[]> {
+
+
+export async function readLoanExcel(filePath: string, sheetName: string,): Promise<RowData[]> {
     const workbook = new excel.Workbook();
-    const rowData: RowData[] = [];
+    const loanRowData: RowData[] = [];
 
     try {
-        // Load the workbook
         await workbook.xlsx.readFile(filePath);
 
-        // Get the specified sheet
         const sheet = workbook.getWorksheet(sheetName);
 
         if (!sheet) {
             throw new CustomErrorHandler(`unable to read sheet ${sheetName}`, 500)
         }
-
-        // Process rows
         sheet!.eachRow((row) => {
-            // Access cell values and push to rowData array
-            rowData.push({
+            loanRowData.push({
                 customer_id: row.getCell(1).value as number,
                 loan_id: row.getCell(2).value as number,
                 loan_amount: row.getCell(3).value as number,
@@ -58,9 +65,44 @@ export async function readExcel(filePath: string, sheetName: string): Promise<Ro
                 start_date: row.getCell(8).value as Date,
                 end_date: row.getCell(9).value as Date,
             });
+
         });
 
-        return rowData;
+        return loanRowData;
+
+    } catch (error: any) {
+        console.error('Error reading Excel file:', error.message);
+        return [];
+    }
+}
+
+export async function readCustomerExcel(filePath: string, sheetName: string): Promise<customerRowData[]> {
+    const workbook = new excel.Workbook();
+    const customerRowData: customerRowData[] = [];
+
+    try {
+        await workbook.xlsx.readFile(filePath);
+
+        const sheet = workbook.getWorksheet(sheetName);
+
+        if (!sheet) {
+            throw new CustomErrorHandler(`unable to read sheet ${sheetName}`, 500)
+        }
+        sheet!.eachRow((row) => {
+            customerRowData.push({
+                customer_id: row.getCell(1).value as number,
+                first_name: row.getCell(2).value as string,
+                last_name: row.getCell(3).value as string,
+                phone_number: row.getCell(4).value as number,
+                monthly_salary: row.getCell(5).value as number,
+                approved_limit: row.getCell(6).value as number,
+                current_debt: row.getCell(7).value as number,
+                age: row.getCell(8).value as number
+            });
+
+        });
+
+        return customerRowData;
 
     } catch (error: any) {
         console.error('Error reading Excel file:', error.message);
@@ -170,7 +212,6 @@ export function calculateEndDate(startDate: string, tenureInMonths?: number) {
 export function isSameDayOfMonthWithinTenure(dateToCheck: string, start_date: Date, end_date: Date, tenure: number) {
     const today = new Date(dateToCheck)
 
-    // Check if the provided date is within the tenure and is the same day of the month
     return (
         today >= start_date &&
         today <= end_date &&
