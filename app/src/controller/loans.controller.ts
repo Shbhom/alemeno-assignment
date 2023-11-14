@@ -49,9 +49,9 @@ export async function checkEligibility(req: Request, res: Response, next: NextFu
             approved_limit: user.approved_limit,
             phone_number: user.phone_no,
         }
-
-        const creditScore = calculateCreditScore(serializedUser.customerId, userLoanData)
-        const { canApprove, correctedInterestRate } = determineLoanApproval(creditScore, userLoanData, loan_amount, interest_rate);
+        const creditScore = calculateCreditScore(serializedUser.customerId, userLoanData, serializedUser.approved_limit)
+        console.log(creditScore, "creditScore", "\n")
+        const { canApprove, correctedInterestRate } = determineLoanApproval(creditScore, userLoanData, loan_amount, interest_rate, serializedUser.monthly_Income);
 
         const responseBody = {
             customer_id,

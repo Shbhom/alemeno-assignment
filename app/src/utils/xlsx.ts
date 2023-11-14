@@ -68,30 +68,32 @@ export async function readExcel(filePath: string, sheetName: string): Promise<Ro
     }
 }
 
-// Function to calculate credit score based on the provided components for a specific user
-export function calculateCreditScore(customerId: number, userLoanData: RowData[]): number {
+export function calculateCreditScore(customerId: number, userLoanData: RowData[], approved_limit: number): number {
     let creditScore = 0;
+    const maxCreditScore = 100;
 
     const userSpecificLoanData = userLoanData.filter((loan) => loan.customer_id === customerId);
 
-    creditScore += userSpecificLoanData.reduce((score, loan) => score + loan.EMIs_paid_on_time * 0.5, 0);
+    const pastLoansPaidOnTimeScore = userSpecificLoanData.reduce((score, loan) => score + loan.EMIs_paid_on_time * 0.05, 0);
+    creditScore += Math.min(pastLoansPaidOnTimeScore, maxCreditScore - creditScore);
 
-    creditScore += Math.min(userSpecificLoanData.length);
+    const numberOfLoansScore = Math.min(userSpecificLoanData.length, maxCreditScore - creditScore);
+    creditScore += numberOfLoansScore;
+
 
     const currentYear = new Date().getFullYear();
     const loanActivityScore = userSpecificLoanData.filter((loan) => loan.start_date.getFullYear() === currentYear).length * 10;
-    creditScore += (loanActivityScore * 0.5);
+    creditScore += (loanActivityScore * 0.1)
 
-    const maxLoanVolumeScore = 50; // Adjusted maximum score for loan volume
-    const loanVolumeScore = Math.min(
-        userSpecificLoanData.reduce((score, loan) => score + loan.loan_amount * loan.tenure * 0.005, 0),
-        maxLoanVolumeScore
-    );
-    creditScore += loanVolumeScore;
+    const loanVolumeScore = userSpecificLoanData.reduce((score, loan) => score + loan.loan_amount * 0.005, 0);
+    if (loanVolumeScore > 100) {
+        creditScore += loanVolumeScore * 0.005
+    } else {
+        creditScore += loanVolumeScore;
+    }
 
-    const sumOfCurrentLoans = userSpecificLoanData.reduce((sum, loan) => sum + loan.monthly_payment * loan.tenure, 0);
-    const approvedLimit = userSpecificLoanData[0]?.loan_amount; // Assuming approved limit is the first loan amount
-    if (sumOfCurrentLoans > approvedLimit) {
+    const sumOfCurrentLoans = userSpecificLoanData.reduce((sum, loan) => sum + loan.loan_amount, 0);
+    if (sumOfCurrentLoans > approved_limit) {
         creditScore = 0;
     }
 
@@ -99,27 +101,39 @@ export function calculateCreditScore(customerId: number, userLoanData: RowData[]
 }
 
 
+
 export function determineLoanApproval(
     creditScore: number,
     userLoanData: RowData[],
     loanAmount: number,
-    interestRate: number
-): { canApprove: boolean; correctedInterestRate: number } {
-    let result: { canApprove: boolean; correctedInterestRate: number } = { canApprove: false, correctedInterestRate: interestRate };
-    let correctedInterest_rate = 5
+    interestRate: number,
+    monthlySalary: number
+): { canApprove: boolean; correctedInterestRate?: number } {
+    let result: { canApprove: boolean; correctedInterestRate?: number } = { canApprove: false };
+
     if (creditScore > 50) {
-        result.canApprove = true
-    } else if (creditScore < 50 || creditScore > 30) {
-        result.canApprove = true
-        result.correctedInterestRate = 12
-    } else if (creditScore < 30 || creditScore > 10) {
-        result.canApprove = true
-        result.correctedInterestRate = 16
-    } else if (creditScore < 10) {
-        result.canApprove = false
+        return { canApprove: true, correctedInterestRate: interestRate }
+    } else if (creditScore > 30) {
+        if (interestRate < 12) {
+            result.correctedInterestRate = 12;
+        }
+        return { canApprove: true, correctedInterestRate: 12 || result.correctedInterestRate }
+    } else if (creditScore > 10) {
+        result.canApprove = true;
+        if (interestRate < 16) {
+            result.correctedInterestRate = 16;
+        }
+        return { canApprove: true, correctedInterestRate: 16 || result.correctedInterestRate }
     }
-    return result
+
+    const sumOfCurrentEMIs = userLoanData.reduce((sum, loan) => sum + loan.monthly_payment, 0);
+    if (sumOfCurrentEMIs > 0.5 * monthlySalary) {
+        result.canApprove = false;
+    }
+
+    return result;
 }
+
 
 export function calculateEMI(loanAmount: number, annualInterestRate: number, tenureInMonths: number) {
     const monthlyInterestRate = (annualInterestRate / 12) / 100;
