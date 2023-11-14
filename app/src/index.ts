@@ -28,7 +28,7 @@ app.get("/healthCheck", (_, res: Response, next: NextFunction) => {
 
 app.post("/trigger-data-ingest", async (_: Request, res: Response, next: NextFunction) => {
     try {
-        const result = await startDataIngestionWorker().then(() => { console.log("data ingested") }).catch((err: any) => { return next(err) })
+        const result = await startDataIngestionWorker(next).then(() => { console.log("data ingested") }).catch((err: any) => { return next(err) })
         res.status(200).json({
             message: "upload"
         })

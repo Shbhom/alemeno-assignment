@@ -7,9 +7,9 @@ export const user = pgTable("customer", {
     last_name: varchar("last_name").notNull(),
     phone_number: numeric("phone_no", { precision: 10, scale: 0 }).notNull().unique(),
     age: decimal("age", { precision: 3, scale: 0 }).notNull(),
-    monthly_salary: decimal("monthly_salary", { precision: 10, scale: 2 }).notNull(),
-    approved_limit: decimal("approved_limit", { precision: 10, scale: 2 }).notNull(),
-    current_debts: decimal("current_debts", { precision: 10, scale: 2 }),
+    monthly_salary: decimal("monthly_salary", { precision: 12, scale: 2 }).notNull(),
+    approved_limit: decimal("approved_limit", { precision: 12, scale: 2 }).notNull(),
+    current_debts: decimal("current_debts", { precision: 12, scale: 2 }),
 })
 
 export const loan = pgTable("loans", {

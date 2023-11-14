@@ -21,6 +21,7 @@ export class CustomErrorHandler extends Error {
 
 export async function ErrorHandlingMiddleware(err: CustomErrorHandler, req: Request, res: Response, next: NextFunction) {
     err.statusCode = err.statusCode || 500;
+    err.message = err.message || "Internal Server Error"
 
     return res.status(err.statusCode).json({
         error: {

@@ -2,7 +2,7 @@ import * as excel from "exceljs"
 import { CustomErrorHandler } from "./errors";
 
 
-export interface RowData {
+export interface LoanRowData {
     customer_id: number;
     loan_id: number;
     loan_amount: number;
@@ -22,7 +22,6 @@ export interface customerRowData {
     phone_number: number
     monthly_salary: number
     approved_limit: number
-    current_debt: number
     age: number
 }
 
@@ -41,9 +40,9 @@ export interface serializedUser {
 
 
 
-export async function readLoanExcel(filePath: string, sheetName: string,): Promise<RowData[]> {
+export async function readLoanExcel(filePath: string, sheetName: string,): Promise<LoanRowData[]> {
     const workbook = new excel.Workbook();
-    const loanRowData: RowData[] = [];
+    const loanRowData: LoanRowData[] = [];
 
     try {
         await workbook.xlsx.readFile(filePath);
@@ -54,6 +53,9 @@ export async function readLoanExcel(filePath: string, sheetName: string,): Promi
             throw new CustomErrorHandler(`unable to read sheet ${sheetName}`, 500)
         }
         sheet!.eachRow((row) => {
+            if (typeof row == "undefined") {
+                return;
+            }
             loanRowData.push({
                 customer_id: row.getCell(1).value as number,
                 loan_id: row.getCell(2).value as number,
@@ -89,16 +91,19 @@ export async function readCustomerExcel(filePath: string, sheetName: string): Pr
             throw new CustomErrorHandler(`unable to read sheet ${sheetName}`, 500)
         }
         sheet!.eachRow((row) => {
-            customerRowData.push({
-                customer_id: row.getCell(1).value as number,
-                first_name: row.getCell(2).value as string,
-                last_name: row.getCell(3).value as string,
-                phone_number: row.getCell(4).value as number,
-                monthly_salary: row.getCell(5).value as number,
-                approved_limit: row.getCell(6).value as number,
-                current_debt: row.getCell(7).value as number,
-                age: row.getCell(8).value as number
-            });
+            if (typeof row === "undefined") {
+                return;
+            } else {
+                customerRowData.push({
+                    customer_id: row.getCell(1).value as number,
+                    first_name: row.getCell(2).value as string,
+                    last_name: row.getCell(3).value as string,
+                    age: row.getCell(4).value as number,
+                    phone_number: row.getCell(5).value as number,
+                    monthly_salary: row.getCell(6).value as number,
+                    approved_limit: row.getCell(7).value as number,
+                });
+            }
 
         });
 
@@ -110,7 +115,7 @@ export async function readCustomerExcel(filePath: string, sheetName: string): Pr
     }
 }
 
-export function calculateCreditScore(customerId: number, userLoanData: RowData[], approved_limit: number): number {
+export function calculateCreditScore(customerId: number, userLoanData: LoanRowData[], approved_limit: number): number {
     let creditScore = 0;
     const maxCreditScore = 100;
 
@@ -146,7 +151,7 @@ export function calculateCreditScore(customerId: number, userLoanData: RowData[]
 
 export function determineLoanApproval(
     creditScore: number,
-    userLoanData: RowData[],
+    userLoanData: LoanRowData[],
     loanAmount: number,
     interestRate: number,
     monthlySalary: number
